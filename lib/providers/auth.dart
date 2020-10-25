@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
 
-import 'package:event_app/providers/config.dart';
+import 'package:map_app_client/providers/config.dart';
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -38,23 +38,34 @@ class Auth with ChangeNotifier {
   }
 
   Future<void> setAuthorizationData(http.Response response) async {
-    final responseData = json.decode(response.body);
-    final prefs = await SharedPreferences.getInstance();
-    _token = response.headers['access-token'];
-    _uid = response.headers['uid'];
-    _client = response.headers['client'];
-    _userId = responseData['data']['id'];
-    _expiryDate = new DateTime.fromMillisecondsSinceEpoch(int.parse(response.headers['expiry']) * 1000);
-    final userData = json.encode(
-      {
-        'access-token': _token,
-        'user_id': _userId,
-        'uid': _uid,
-        'client': _client,
-        'expiry': response.headers['expiry']
-      },
-    );
-    prefs.setString('userData', userData);
+    try {
+      final responseData = json.decode(response.body);
+      final prefs = await SharedPreferences.getInstance();
+      _token = response.headers['access-token'];
+      _uid = response.headers['uid'];
+      _client = response.headers['client'];
+      _userId = responseData['data']['id'];
+      _expiryDate = new DateTime.fromMillisecondsSinceEpoch(
+          int.parse(response.headers['expiry']) * 1000);
+      final userData = json.encode(
+        {
+          'access-token': _token,
+          'user_id': _userId,
+          'uid': _uid,
+          'client': _client,
+          'expiry': response.headers['expiry']
+        },
+      );
+      prefs.setString('userData', userData);
+    } catch(error) {
+      print('------------------set sippai----');
+      print(error);
+      _token = null;
+      _client = null;
+      _uid = null;
+      _userId = null;
+      print('------------------set sippai----');
+    }
   }
 
   Future<void> _authenticate(String prefix, Map<String, String> body) async {
@@ -69,10 +80,13 @@ class Auth with ChangeNotifier {
       final responseData = json.decode(response.body);
 
       if (responseData['error'] != null) {
-        throw HttpException(responseData['error']['message']);
+        print('---------------');
+        print((responseData['error']['message']));
+        print('---------------');
+//        throw HttpException(responseData['error']['message']);
       }
+      await setAuthorizationData(response);
       notifyListeners();
-      setAuthorizationData(response);
     } catch (error) {
       print(error);
     }
@@ -107,18 +121,22 @@ class Auth with ChangeNotifier {
     if (expiryDate.isBefore(DateTime.now())) {
       return false;
     }
-    _token = extractedUserData['access-token'];
-    _client = extractedUserData['client'];
-    _uid = extractedUserData['uid'];
-    _userId = extractedUserData['user_id'];
-    _expiryDate = new DateTime.fromMillisecondsSinceEpoch(int.parse(extractedUserData['expiry']) * 1000);;
 
-    _authenticate('/validate_token',
-      {
-        'access-token': _token,
-        'uid': _uid,
-      },
-    );
+    // HTTPがgetなので個別で作成
+    final response = await http.get('$apiPath/auth/validate_token?access-token=$_token&client=$_client&uid=$_uid', headers: {'Content-Type': 'application/json'},);
+    final responseData = json.decode(response.body);
+    print('---------------');
+    if (responseData['error'] != null) {
+      print((responseData['error']['message']));
+      print('---------------');
+      _token = null;
+      _client = null;
+      _uid = null;
+      _userId = null;
+      return false;
+    }
+
+    await setAuthorizationData(response);
     _autoLogout();
     notifyListeners();
     return true;
@@ -135,7 +153,6 @@ class Auth with ChangeNotifier {
     }
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
-    // prefs.remove('userData');
     prefs.clear();
   }
 

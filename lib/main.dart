@@ -13,6 +13,7 @@ import './screens/auth_screen.dart';
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -36,16 +37,20 @@ class MyApp extends StatelessWidget {
             accentColor: Colors.black54,
             fontFamily: 'Lato',
           ),
-          home: auth.isAuth
-              ? ProductsOverviewScreen()
-              : FutureBuilder(
-                  future: auth.tryAutoLogin(),
-                  builder: (ctx, authResultSnapshot) =>
-                      authResultSnapshot.connectionState ==
-                              ConnectionState.waiting
-                          ? SplashScreen()
-                          : AuthScreen(),
-                ),
+          // TOOD, auth.tryAutoLogin() ? x : y でいいのでは＞？
+          home: FutureBuilder(
+            future: auth.tryAutoLogin(),
+            builder: (ctx, authResultSnapshot) {
+              if(auth.isAuth) {
+                print('----snapshow----');
+                print(auth.isAuth);
+                print(authResultSnapshot.hasData);
+                print('----snapshow----');
+                return ProductsOverviewScreen();
+              }
+              return AuthScreen();
+            }
+          ),
           routes: {
             ProductDetailScreen.routeName: (ctx) => ProductDetailScreen(),
             UserProductsScreen.routeName: (ctx) => UserProductsScreen(),
@@ -56,3 +61,14 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+//
+//auth.isAuth
+//? ProductsOverviewScreen()
+//    : FutureBuilder(
+//future: auth.tryAutoLogin(),
+//builder: (ctx, authResultSnapshot) =>
+//authResultSnapshot.connectionState == ConnectionState.waiting
+//? SplashScreen()
+//    : AuthScreen(),
+//),

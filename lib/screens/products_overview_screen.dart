@@ -1,4 +1,4 @@
-import 'package:event_app/widgets/products_list_view.dart';
+import 'package:map_app_client/widgets/products_list_view.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

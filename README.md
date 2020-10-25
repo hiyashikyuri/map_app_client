@@ -1,4 +1,5 @@
-# event_app
+# 概要
+Map App
 flutterクライアント + Rails devise token authのサンプルコードです。
 詳細はブログ似て確認してください。
 

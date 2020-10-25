@@ -1,4 +1,4 @@
-import 'package:event_app/providers/user.dart';
+import 'package:map_app_client/providers/user.dart';
 import 'package:flutter/foundation.dart';
 
 class Product with ChangeNotifier {

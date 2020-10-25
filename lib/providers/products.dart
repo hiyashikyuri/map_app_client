@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:event_app/providers/config.dart';
-import 'package:event_app/providers/user.dart';
+import 'package:map_app_client/providers/auth.dart';
+import 'package:map_app_client/providers/config.dart';
+import 'package:map_app_client/providers/user.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -17,6 +18,8 @@ class Products with ChangeNotifier {
 
   final String authToken;
   final int userId;
+
+  final auth = new Auth();
 
   Products(this.authToken, this.userId, this._items);
 
@@ -62,8 +65,8 @@ class Products with ChangeNotifier {
   Future<void> fetchAndSetProducts() async {
     var url = '$apiPath/events';
     var headers = await getAuthorization();
+    final response = await http.get(url, headers: headers);
     try {
-      final response = await http.get(url, headers: headers);
       final extractedData = json.decode(response.body)['response'] as List;
 
       if (extractedData == null) {
@@ -85,6 +88,8 @@ class Products with ChangeNotifier {
       notifyListeners();
     } catch (error) {
       print(error);
+    } finally {
+      this.auth.setAuthorizationData(response);
     }
   }
 
